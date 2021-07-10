@@ -1,8 +1,13 @@
 import os
 from flask import Flask, request, abort, jsonify
+from flask.globals import current_app
+from flask.helpers import make_response
+from flask.signals import message_flashed
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 import random
+
+from sqlalchemy.sql.expression import select
 
 from models import setup_db, Question, Category
 
@@ -16,30 +21,76 @@ def create_app(test_config=None):
   '''
   @TODO: Set up CORS. Allow '*' for origins. Delete the sample route after completing the TODOs
   '''
+  CORS(app)
+# DONE
+  ''' 
+  @TODO: Use the after_request decorator to set Access-Control-Allow 
+  '''
+  @app.after_request
+  def after_request(response):
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Authorization,true')
+    response.headers.add('Access-Control-Allow-Headers', 'GET, POST, PATCH, DELETE, OPTION')
+    return response
+
+## JUST FOR TEST I will delete it later
+  @app.route('/')
+  def hello():
+    return jsonify({
+     'message' : "Hello"
+    })
 
   '''
-  @TODO: Use the after_request decorator to set Access-Control-Allow
-  '''
-
-  '''
-  @TODO: 
+  @TODO: DONE 
   Create an endpoint to handle GET requests 
   for all available categories.
   '''
-
+  @app.route('/categories' , methods=['GET'])
+  def get_categories():
+    categories = Category.query.all()
+    formated_categories =[category.format() for category in categories]
+    return jsonify({
+          'success': True,
+          'categories':formated_categories,
+          'total_categories':len(formated_categories)
+          })
 
   '''
-  @TODO: 
+  @TODO: [DONE 90%]
   Create an endpoint to handle GET requests for questions, 
   including pagination (every 10 questions). 
   This endpoint should return a list of questions, 
-  number of total questions, current category, categories. 
+  number of total questions, current category, categories.  ##################TODO: I didn't understand it 
 
   TEST: At this point, when you start the application
   you should see questions and categories generated,
   ten questions per page and pagination at the bottom of the screen for three pages.
   Clicking on the page numbers should update the questions. 
   '''
+  Questions_per_page = 10 
+
+  def pagination(request, selection):
+
+    page = request.args.get('page', 1, type=int)
+    start = (page - 1) * Questions_per_page
+    end = start + Questions_per_page
+
+    questions =[question.format() for question in selection]
+    current = questions[start:end]
+
+    return current
+
+  @app.route('/questions', methods=['GET'])
+  def get_questions():
+   
+
+    questions = Question.query.order_by(Question.id).all()
+    current_questions = pagination(request,questions)
+
+    return jsonify({
+          'success': True,
+          'questions':current_questions,
+          'total_questions':len(questions)
+          })
 
   '''
   @TODO: 
@@ -48,19 +99,74 @@ def create_app(test_config=None):
   TEST: When you click the trash icon next to a question, the question will be removed.
   This removal will persist in the database and when you refresh the page. 
   '''
+  @app.route('/questions/<int:question_id>',methods=['DELETE'])
+  def delete_question(question_id):
+    
+    try:
+      question = Question.query.filter_by(Question.id == question_id).one_or_none()
+
+      if question is None:
+        abort(404)
+
+
+
+      question.delete()
+      questions = Question.query.order_by(Question.id).all()
+      current_question = pagination(request,questions)
+
+
+      return jsonify({
+        'success': True,
+        'deleted' : question_id,
+        'questions' : current_question,
+        'total_questions':len(questions)
+
+      })
+    except:
+      abort(422)
+
+    
 
   '''
-  @TODO: 
+  @TODO: [DONE]
   Create an endpoint to POST a new question, 
   which will require the question and answer text, 
-  category, and difficulty score.
-
-  TEST: When you submit a question on the "Add" tab, 
+  category, and difficulty score. 
+ 
+   TODO -> TEST: When you submit a question on the "Add" tab, 
   the form will clear and the question will appear at the end of the last page
   of the questions list in the "List" tab.  
   '''
+  @app.route('/questions',methods=['POST'])
+  def create_question():
+    body = request.get_json()
+
+    new_question = body.get('question',None)
+    new_answer = body.get('answer',None)
+    new_category =  body.get('category',None)
+    new_difficulty =  body.get('difficulty',None)
+
+    try:
+      question = Question(new_question,new_answer,new_category,new_difficulty)
+      question.insert()
+
+      questions = Question.query.order_by(Question.id).all()
+      current_question = pagination(request,questions)
+
+      return jsonify({
+        'success': True,
+        'created' : question.id,
+        'questions' : current_question,
+        'total_questions':len(questions)
+              })
+    except:
+      abort(422)
+
+   
 
   '''
+
+
   @TODO: 
   Create a POST endpoint to get questions based on a search term. 
   It should return any questions for whom the search term 
