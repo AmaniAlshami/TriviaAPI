@@ -24,7 +24,6 @@ def create_app(test_config=None):
   @TODO: Set up CORS. Allow '*' for origins. Delete the sample route after completing the TODOs
   '''
   cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
-  #CORS(app)
 # DONE
   ''' 
   @TODO: Use the after_request decorator to set Access-Control-Allow 
@@ -126,7 +125,8 @@ def create_app(test_config=None):
       question.delete()
 
       return jsonify({
-        'success': True})
+        'success': True,
+        'deleted' : question_id})
     except:
       abort(422)
 
@@ -212,9 +212,11 @@ def create_app(test_config=None):
   @app.route('/categories/<int:category_id>/questions', methods=['GET'])
   def get_questions_per_category(category_id):
 
-    if category_id not in formated_categories():
-       abort(404)
-   
+    categories = Category.query.all()
+    categories_ids = [category.get_id() for category in categories]
+
+    if category_id not in categories_ids:
+      abort(404)
 
     questions = Question.query.filter(Question.category == category_id).all()
     current_questions = pagination(request,questions)
@@ -241,22 +243,42 @@ def create_app(test_config=None):
   '''
   
   @app.route('/quizzes',methods=['POST'])
-  @cross_origin()
   def play_quize():
     body = request.get_json()
 
-    #previous_questions = body.get('previous_questions',None) # TO avoid duplication
-    quiz_category = body.get('quiz_category','Entertainment')
+    previous_questions = body.get('previous_questions') # TO avoid duplication
+    quiz_category = body.get('quiz_category')
+   
+    if quiz_category['id'] == 0:
+      questions = Question.query.all()
+    else:
+      questions = Question.query.filter(Question.category == quiz_category['id']).all()
 
-    category_id = Category.query(Category.id).filter(Category.type == quiz_category).all()
-    questions = Question.query.filter(Question.category == category_id).all()
+      
     formated_questions =[question.format() for question in questions]
+    
     question = random.choice(formated_questions)
+    
 
-    return jsonify({
-      'success': True,
-      'question':question
-    })
+    while len(previous_questions) < len(formated_questions):
+      if question['id'] not in previous_questions :
+        return jsonify({
+        'success': True,
+        'question':question
+      })
+      else:
+        question = random.choice(formated_questions)
+      
+
+    else: 
+      return jsonify({
+        'success': False })
+
+
+  
+
+
+    
   
   '''
   @TODO: [DONE]
@@ -299,3 +321,5 @@ def create_app(test_config=None):
   return app
 
     
+
+ 

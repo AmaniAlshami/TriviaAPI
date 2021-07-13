@@ -76,7 +76,5 @@ class Category(db.Model):
       'id': self.id,
       'type': self.type
     }
-  def format2(self):
-    return {
-      self.id : self.type
-    }
+  def get_id(self):
+    return  self.id
