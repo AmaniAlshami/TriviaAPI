@@ -70,12 +70,12 @@ Errors are returned as JSON objects in the following format:
 ```
 This API will return four error types when requests fail:
 
-400: Bad Request
-404: Resource Not Found
-422: Not Processable
-405: Method not allowed
+* 400: Bad Request
+* 404: Resource Not Found
+* 422: Not Processable
+* 405: Method not allowed
 
-### GET /categories
+**GET /categories
 
 General:
 Returns an object with a single key, categories, that contains an object of id: category_string key:value pairs.
@@ -94,7 +94,7 @@ Sample: curl http://127.0.0.1:5000/categories
 }
 ```
 
-### GET /questions or GET '/questions?page=${integer}'
+**GET /questions or GET '/questions?page=${integer}'
 
 General:
 Returns a list of questions objects, success value, categories, current_category,and total number of questions
@@ -188,7 +188,7 @@ Sample: curl http://127.0.0.1:5000/questions
   "total_questions": 17
 }
 ```
-### GET /categories/${id}/questions
+**GET /categories/${id}/questions
 
 General:
 Returns a list of questions objects for specific category, success value, current_category,and total number of questions
@@ -231,7 +231,7 @@ Sample: curl http://127.0.0.1:5000/categories/2/questions
 }
 ```
 
-### DELETE /questions/${id}
+**DELETE /questions/${id}
 
 General:
 Deletes the question of the given ID if it exists. Returns the id of the deleted book and success value.
@@ -244,7 +244,7 @@ Sample: curl -X DELETE http://127.0.0.1:5000/questions/18
 }
 ```
 
-### POST /questions
+**POST /questions
 
 General:
 Based on what you send if you send searsh term that will return all the questions that have searsh term, categories, current_category, success value othrewis it creates a new questions using the submitted question, answer, difficulty and category. Returns success value.
