@@ -248,6 +248,9 @@ def create_app(test_config=None):
 
     previous_questions = body.get('previous_questions') # TO avoid duplication
     quiz_category = body.get('quiz_category')
+
+    if quiz_category == None or previous_questions == None :
+      abort(422)
    
     if quiz_category['id'] == 0:
       questions = Question.query.all()
